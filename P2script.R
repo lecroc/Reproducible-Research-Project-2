@@ -1,5 +1,12 @@
 ## Reproducible Research Project 2
 
+# load libraries
+
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+
 # Check to see if data exists in working directory and download it if it is not
 
 if(!file.exists("./repdata%2Fdata%2FStormData.csv.bz2"))
