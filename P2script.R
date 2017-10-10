@@ -4,7 +4,6 @@
 
 library(dplyr)
 library(ggplot2)
-library(stringr)
 
 
 # Check to see if data exists in working directory and download it if it is not
@@ -112,16 +111,50 @@ d2<- d2 %>%
   mutate(PropertyDamage = ifelse(PExp == -1, 0, PropertyDamage*10^PExp)) %>%
   mutate(CropDamage = ifelse(CExp == -1, 0, CropDamage*10^CExp))
 
-# drop exponent columns - don't need anymore
-
-keep2<-c(1,2,3,4,5,6,8)
-
-d2<-d2[,keep2]
-
 d3<-d2 %>%
   group_by(Event) %>%
   summarize(PropertyDamage=sum(PropertyDamage), CropDamage = sum (CropDamage), Deaths=sum(Deaths), Injuries=sum(Injuries))
 
-View(d3)
 
+d3$TotalHealth<-with(d3, Deaths+Injuries)
+d3$TotalDamage<-with(d3, PropertyDamage+CropDamage)
+
+keep3<-c(1,6,7)
+
+d3<-d3[,keep3]
+
+p1<-arrange(d3, desc(TotalHealth))
+
+p2<-arrange(d3, desc(TotalDamage))
+
+p1<-p1[1:10,]
+
+p2<-p2[1:10,]
+
+plot1<-ggplot(aes(x=Event, y=TotalHealth),data=p1)+geom_bar(fill="blue", stat="identity")+
+  labs(x="Event", y="Deaths + Injuries", title="Top Ten Weather Events in Terms of Deaths+Injuries")+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
+  scale_x_discrete(limits=p1$Event)
+
+plot2<-ggplot(aes(x=Event, y=TotalDamage),data=p2)+geom_bar(fill="blue", stat="identity")+
+  labs(x="Event", y="Total Damage in Dollars", title="Top Ten Weather Events in Terms of Property + Crop Damage")+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
+  scale_x_discrete(limits=p2$Event)
+
+keepnames<-unique(c(as.character(p1$Event), as.character(p2$Event)))
+
+year<-d2
+
+year$Event<-as.character(year$Event)
+
+year<-subset(year, year$Event %in% keepnames)
+
+year$Event<-as.factor(year$Event)
+
+year<- year %>%
+  group_by(Year, Event) %>%
+  summarize(sum(Deaths+Injuries), sum(PropertyDamage+CropDamage)) %>%
+  arrange(Event, Year)
+
+names(year)<-c("Year", "Event", "TotalHealth", "TotalDamage")
 
