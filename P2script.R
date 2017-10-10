@@ -4,6 +4,8 @@
 
 library(dplyr)
 library(ggplot2)
+library(lubridate)
+library(pracma)
 
 
 # Check to see if data exists in working directory and download it if it is not
@@ -55,7 +57,7 @@ d2$BGN_DATE<-as.Date(d2$BGN_DATE, "%m/%d/%Y")
 
 # convert date to year
 
-d2$BGN_DATE<-format(d2$BGN_DATE, format="%Y")
+d2$BGN_DATE<-year(d2$BGN_DATE)
 
 # Update Names
 
@@ -141,6 +143,10 @@ plot2<-ggplot(aes(x=Event, y=TotalDamage),data=p2)+geom_bar(fill="blue", stat="i
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
   scale_x_discrete(limits=p2$Event)
 
+plot1
+
+plot2
+
 keepnames<-unique(c(as.character(p1$Event), as.character(p2$Event)))
 
 year<-d2
@@ -149,12 +155,9 @@ year$Event<-as.character(year$Event)
 
 year<-subset(year, year$Event %in% keepnames)
 
-year$Event<-as.factor(year$Event)
+yearplot<-year %>%
+  group_by(Year) %>%
+  summarize(HealthEffects=sum(Deaths+Injuries), FinancialEffects=sum(PropertyDamage+CropDamage)) %>%
+  arrange(Year)
 
-year<- year %>%
-  group_by(Year, Event) %>%
-  summarize(sum(Deaths+Injuries), sum(PropertyDamage+CropDamage)) %>%
-  arrange(Event, Year)
-
-names(year)<-c("Year", "Event", "TotalHealth", "TotalDamage")
-
+plot3<-ggplot(yearplot, aes(x=Year, y=ma1))+geom_line(col="blue")
