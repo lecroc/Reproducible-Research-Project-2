@@ -12,10 +12,10 @@ library(pracma)
 
 if(!file.exists("./repdata%2Fdata%2FStormData.csv.bz2"))
   
-  {
-    fileURL<-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
-    download.file(fileURL, destfile = "./repdata%2Fdata%2FStormData.csv.bz2")
-  }
+{
+  fileURL<-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+  download.file(fileURL, destfile = "./repdata%2Fdata%2FStormData.csv.bz2")
+}
 
 # Read data file into data file d1
 
@@ -81,16 +81,16 @@ d2$CExp<-as.character(d2$CExp)
 # Convert exponent flags to numeric characters
 
 d2<-d2 %>% 
-    mutate(PExp = ifelse(PExp == "H" | PExp == "h", "2", PExp)) %>%
-    mutate(PExp = ifelse(PExp == "K" | PExp == "k", "3", PExp)) %>%
-    mutate(PExp = ifelse(PExp == "M" | PExp == "m", "6", PExp)) %>%
-    mutate(PExp = ifelse(PExp == "B" | PExp == "b", "9", PExp)) %>%
-    mutate(PExp = ifelse(PExp == "+", "0", PExp))               %>%
-    mutate(CExp = ifelse(CExp == "H" | CExp == "h", "2", CExp)) %>%
-    mutate(CExp = ifelse(CExp == "K" | CExp == "k", "3", CExp)) %>%
-    mutate(CExp = ifelse(CExp == "M" | CExp == "m", "6", CExp)) %>%
-    mutate(CExp = ifelse(CExp == "B" | CExp == "b", "9", CExp)) %>%
-    mutate(CExp = ifelse(CExp == "+", "0", CExp))
+  mutate(PExp = ifelse(PExp == "H" | PExp == "h", "2", PExp)) %>%
+  mutate(PExp = ifelse(PExp == "K" | PExp == "k", "3", PExp)) %>%
+  mutate(PExp = ifelse(PExp == "M" | PExp == "m", "6", PExp)) %>%
+  mutate(PExp = ifelse(PExp == "B" | PExp == "b", "9", PExp)) %>%
+  mutate(PExp = ifelse(PExp == "+", "0", PExp))               %>%
+  mutate(CExp = ifelse(CExp == "H" | CExp == "h", "2", CExp)) %>%
+  mutate(CExp = ifelse(CExp == "K" | CExp == "k", "3", CExp)) %>%
+  mutate(CExp = ifelse(CExp == "M" | CExp == "m", "6", CExp)) %>%
+  mutate(CExp = ifelse(CExp == "B" | CExp == "b", "9", CExp)) %>%
+  mutate(CExp = ifelse(CExp == "+", "0", CExp))
 
 # Convert numeric flags to actual numbers - creates NAs for non numerics
 
@@ -113,25 +113,36 @@ d2<- d2 %>%
   mutate(PropertyDamage = ifelse(PExp == -1, 0, PropertyDamage*10^PExp)) %>%
   mutate(CropDamage = ifelse(CExp == -1, 0, CropDamage*10^CExp))
 
+# Group by Events and total damage and health statistics
+
 d3<-d2 %>%
   group_by(Event) %>%
   summarize(PropertyDamage=sum(PropertyDamage), CropDamage = sum (CropDamage), Deaths=sum(Deaths), Injuries=sum(Injuries))
 
+# Add Deaths + Injuries and Crop + Property Damage
 
 d3$TotalHealth<-with(d3, Deaths+Injuries)
 d3$TotalDamage<-with(d3, PropertyDamage+CropDamage)
+
+# Select only the columns I need for plots
 
 keep3<-c(1,6,7)
 
 d3<-d3[,keep3]
 
+# Arrange on table by Health Impact and another by Damage
+
 p1<-arrange(d3, desc(TotalHealth))
 
 p2<-arrange(d3, desc(TotalDamage))
 
+# Select the top 10 Health Impact Events and the top 10 Damage Events
+
 p1<-p1[1:10,]
 
 p2<-p2[1:10,]
+
+# Create plots of top 10s for Health and Damage Impact
 
 plot1<-ggplot(aes(x=Event, y=TotalHealth),data=p1)+geom_bar(fill="blue", stat="identity")+
   labs(x="Event", y="Deaths + Injuries", title="Top Ten Weather Events in Terms of Deaths+Injuries")+
@@ -147,7 +158,22 @@ plot1
 
 plot2
 
+# Check to see what percentage of totals are represented by the top 10s
+
+TH<-sum(d3$TotalHealth)
+TD<-sum(d3$TotalDamage)
+PH<-sum(p1$TotalHealth)
+PD<-sum(p2$TotalDamage)
+
+PH/TH # Percent of total health impact from top 10
+
+PD/TD # Percent of total damage from top 10
+
+# Create a vector of uniqe Events from both top 10 lists
+
 keepnames<-unique(c(as.character(p1$Event), as.character(p2$Event)))
+
+# Create a new data table for time series plot of impactful events
 
 year<-d2
 
@@ -160,4 +186,4 @@ yearplot<-year %>%
   summarize(HealthEffects=sum(Deaths+Injuries), FinancialEffects=sum(PropertyDamage+CropDamage)) %>%
   arrange(Year)
 
-plot3<-ggplot(yearplot, aes(x=Year, y=ma1))+geom_line(col="blue")
+plot3<-ggplot(yearplot, aes(x=Year, y=HealthEffects))+geom_line(col="blue")
