@@ -5,7 +5,58 @@
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-library(pracma)
+library(scales)
+
+# Turn off scientific notation
+
+options(scipen = 999)
+
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
 
 
 # Check to see if data exists in working directory and download it if it is not
@@ -103,9 +154,6 @@ d2 <- d2 %>%
   mutate(PExp = ifelse(is.na(PExp),-1,PExp)) %>%
   mutate(CExp = ifelse(is.na(CExp),-1,CExp))
 
-# Turn off scientific notation
-
-options(scipen = 999)
 
 # Convert Property Damage and Crop Damage estimates by multiplying by the exponents
 
@@ -136,29 +184,28 @@ p1<-arrange(d3, desc(TotalHealth))
 
 p2<-arrange(d3, desc(TotalDamage))
 
-# Select the top 10 Health Impact Events and the top 10 Damage Events
+# Select the top 15 Health Impact Events and the top 10 Damage Events
 
-p1<-p1[1:10,]
+p1<-p1[1:15,]
 
-p2<-p2[1:10,]
+p2<-p2[1:15,]
 
 # Create plots of top 10s for Health and Damage Impact
 
 plot1<-ggplot(aes(x=Event, y=TotalHealth),data=p1)+geom_bar(fill="blue", stat="identity")+
-  labs(x="Event", y="Deaths + Injuries", title="Top Ten Weather Events in Terms of Deaths+Injuries")+
+  labs(x="Event", y="Deaths + Injuries", title="Top 15 Weather Events in Terms of Deaths+Injuries")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
-  scale_x_discrete(limits=p1$Event)
+  scale_x_discrete(limits=p1$Event)+scale_y_continuous(labels = comma)
 
 plot2<-ggplot(aes(x=Event, y=TotalDamage),data=p2)+geom_bar(fill="blue", stat="identity")+
-  labs(x="Event", y="Total Damage in Dollars", title="Top Ten Weather Events in Terms of Property + Crop Damage")+
+  labs(x="Event", y="Total Damage in Dollars", title="Top 15 Weather Events in Terms of Property + Crop Damage")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
-  scale_x_discrete(limits=p2$Event)
+  scale_x_discrete(limits=p2$Event)+scale_y_continuous(labels = comma)
 
-plot1
 
-plot2
+multiplot(plot1, plot2, cols=2)
 
-# Check to see what percentage of totals are represented by the top 10s
+# Check to see what percentage of totals are represented by the top 15
 
 TH<-sum(d3$TotalHealth)
 TD<-sum(d3$TotalDamage)
@@ -169,7 +216,7 @@ PH/TH # Percent of total health impact from top 10
 
 PD/TD # Percent of total damage from top 10
 
-# Create a vector of uniqe Events from both top 10 lists
+# Create a vector of uniqe Events from both top 15 lists
 
 keepnames<-unique(c(as.character(p1$Event), as.character(p2$Event)))
 
@@ -186,4 +233,13 @@ yearplot<-year %>%
   summarize(HealthEffects=sum(Deaths+Injuries), FinancialEffects=sum(PropertyDamage+CropDamage)) %>%
   arrange(Year)
 
-plot3<-ggplot(yearplot, aes(x=Year, y=HealthEffects))+geom_line(col="blue")
+plot3<-ggplot(yearplot, aes(x=Year, y=HealthEffects))+geom_line(col="blue")+
+  labs(x="Year", y="Deaths + Injuries", title="Health Effects of Weather Events by Year")+
+  geom_smooth(method = "auto")+scale_y_continuous(labels = comma)
+
+plot4<-ggplot(yearplot, aes(x=Year, y=FinancialEffects))+geom_line(col="blue")+
+  labs(x="Year", y="Property + Crop Damage", title="Financial Effects of Weather Events by Year")+
+  geom_smooth(method = "auto")+scale_y_continuous(labels = comma)
+
+multiplot(plot3, plot4, cols=2)
+
