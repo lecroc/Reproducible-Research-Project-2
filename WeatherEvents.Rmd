@@ -2,7 +2,12 @@
 title: "Financial and Health Effects of Weather Events"
 author: "Charlie LeCrone"
 date: "October 12, 2017"
-output: html_document
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 8
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +21,7 @@ This analysis will evaluate the health and financial effects of various weather 
 
 ## Load Libraries and Functions
 
-First I will load the libraries and functions I will use in the analysis.  I'll also turn off scientific notation.  We'll be looking at a lot of large numbers in this analysis, and I prefer to see them in standard notation.
+First I will load the libraries and functions I will use in the analysis.
 
 ```{r, echo=T}
 # load libraries
@@ -26,9 +31,6 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 
-# Turn off scientific notation
-
-options(scipen = 999)
 
 # Multiple plot function
 #
@@ -213,6 +215,23 @@ p1<-p1[1:15,]
 
 p2<-p2[1:15,]
 
+# Check to see what percentage of totals are represented by the top 15
+
+TH<-sum(d3$TotalHealth)
+TD<-sum(d3$TotalDamage)
+PH<-sum(p1$TotalHealth)
+PD<-sum(p2$TotalDamage)
+
+PH/TH # Percent of total health impact from top 10
+
+PD/TD # Percent of total damage from top 10
+
+# Add percentage column to p1 and p2
+
+p1$percent<-p1$TotalHealth/TH
+
+p2$percent<-p2$TotalDamage/TD
+
 # look at plotting data frames
 
 head(p1)
@@ -224,43 +243,27 @@ head(p2)
 
 
 
-```{r, echo=T}
+```{r, fig.width=8, fig.height=4, echo=T}
 
 # Create plots of top 15s for Health and Damage Impact
 
-plot1<-ggplot(aes(x=Event, y=TotalHealth),data=p1)+geom_bar(fill="blue", stat="identity")+
-  labs(x="Event", y="Deaths + Injuries", title="Top 15 Weather Events in Terms of Deaths+Injuries")+
+plot1<-ggplot(aes(x=Event, y=percent),data=p1)+geom_bar(fill="blue", stat="identity")+
+  labs(x="Event", y="% of Deaths + Injuries", title="Top 15 Events - Health")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
-  scale_x_discrete(limits=p1$Event)+scale_y_continuous(labels = comma)
+  scale_x_discrete(limits=p1$Event)
 
-plot2<-ggplot(aes(x=Event, y=TotalDamage),data=p2)+geom_bar(fill="blue", stat="identity")+
-  labs(x="Event", y="Total Damage in Dollars", title="Top 15 Weather Events in Terms of Property + Crop Damage")+
+plot2<-ggplot(aes(x=Event, y=percent),data=p2)+geom_bar(fill="blue", stat="identity")+
+  labs(x="Event", y="Total Damage in Dollars", title="Top 15 Events - Damage")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
-  scale_x_discrete(limits=p2$Event)+scale_y_continuous(labels = comma)
-
+  scale_x_discrete(limits=p2$Event)
 
 multiplot(plot1, plot2, cols=2)
 ```
 
-There is a lot of variability in how events are labeled in the data set.  Let's check to see what percentage of the total health and financial effects are included in the top 15 events for each category:
-
-```{r, echo=T}
-
-# Check to see what percentage of totals are represented by the top 15
-
-TH<-sum(d3$TotalHealth)
-TD<-sum(d3$TotalDamage)
-PH<-sum(p1$TotalHealth)
-PD<-sum(p2$TotalDamage)
-
-PH/TH # Percent of total health impact from top 10
-
-PD/TD # Percent of total damage from top 10
-```
 
 Finally, we'll look at how these weather effects have trended over time
 
-```{r, echo=T}
+```{r, fig.width=8, fig.height=4, echo=T}
 
 # Create a vector of uniqe Events from both top 15 lists
 
@@ -280,12 +283,12 @@ yearplot<-year %>%
   arrange(Year)
 
 plot3<-ggplot(yearplot, aes(x=Year, y=HealthEffects))+geom_line(col="blue")+
-  labs(x="Year", y="Deaths + Injuries", title="Health Effects of Weather Events by Year")+
-  geom_smooth(method = "auto")+scale_y_continuous(labels = comma)
+  labs(x="Year", y="Deaths + Injuries", title="Health Effects by Year")+
+  geom_smooth(method = "auto")
 
 plot4<-ggplot(yearplot, aes(x=Year, y=FinancialEffects))+geom_line(col="blue")+
-  labs(x="Year", y="Property + Crop Damage", title="Financial Effects of Weather Events by Year")+
-  geom_smooth(method = "auto")+scale_y_continuous(labels = comma)
+  labs(x="Year", y="Property + Crop Damage", title="Damage by Year")+
+  geom_smooth(method = "auto")
 
 multiplot(plot3, plot4, cols=2)
 ```

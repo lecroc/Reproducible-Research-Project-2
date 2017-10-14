@@ -190,7 +190,26 @@ p1<-p1[1:15,]
 
 p2<-p2[1:15,]
 
-# Create plots of top 10s for Health and Damage Impact
+# Check to see what percentage of totals are represented by the top 15
+
+TH<-sum(d3$TotalHealth)
+TD<-sum(d3$TotalDamage)
+PH<-sum(p1$TotalHealth)
+PD<-sum(p2$TotalDamage)
+
+PH/TH # Percent of total health impact from top 10
+
+PD/TD # Percent of total damage from top 10
+
+# Add percentage column to p1 and p2
+
+p1$percent<-p1$TotalHealth/TH
+
+p2$percent<-p2$TotalDamage/TD
+
+
+
+# Create plots of top 15s for Health and Damage Impact
 
 plot1<-ggplot(aes(x=Event, y=TotalHealth),data=p1)+geom_bar(fill="blue", stat="identity")+
   labs(x="Event", y="Deaths + Injuries", title="Top 15 Weather Events in Terms of Deaths+Injuries")+
@@ -205,16 +224,7 @@ plot2<-ggplot(aes(x=Event, y=TotalDamage),data=p2)+geom_bar(fill="blue", stat="i
 
 multiplot(plot1, plot2, cols=2)
 
-# Check to see what percentage of totals are represented by the top 15
 
-TH<-sum(d3$TotalHealth)
-TD<-sum(d3$TotalDamage)
-PH<-sum(p1$TotalHealth)
-PD<-sum(p2$TotalDamage)
-
-PH/TH # Percent of total health impact from top 10
-
-PD/TD # Percent of total damage from top 10
 
 # Create a vector of uniqe Events from both top 15 lists
 
