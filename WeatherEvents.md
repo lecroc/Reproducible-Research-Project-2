@@ -1,6 +1,6 @@
 # Financial and Health Effects of Weather Events
 Charlie LeCrone  
-October 12, 2017  
+October 15, 2017  
 
 
 
