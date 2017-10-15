@@ -2,6 +2,11 @@
 
 # load libraries
 
+if("dplyr" %in% rownames(installed.packages()) == FALSE) {install.packages("dplyr")}
+if("ggplot2" %in% rownames(installed.packages()) == FALSE) {install.packages("ggplot2")}
+if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")}
+if("scales" %in% rownames(installed.packages()) == FALSE) {install.packages("scales")}
+
 library(dplyr)
 library(ggplot2)
 library(lubridate)

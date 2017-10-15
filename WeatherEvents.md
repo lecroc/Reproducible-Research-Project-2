@@ -6,16 +6,20 @@ October 12, 2017
 
 ## Synopsis
 
-This analysis will evaluate the health and financial effects of various weather events.  The data comes from........
+This analysis will evaluate the health and financial effects of various weather events.  The data comes from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database.  I will be evaluating different weather events in terms of their effects on public health and financial impact.  Effects on public health will be defined as fatalities plus injuries, and the financial impact will be defined as property plus crop damage.  I will show the top 15 events in each category, and that for each, they represent over 90% of the total impact reflected in the data.  I'll also show how the events have trended over time.
 
+### Load Libraries and Functions
 
-## Load Libraries and Functions
-
-First I will load the libraries and functions I will use in the analysis.
+First I will load the libraries and functions I will use in the analysis.  If a required library is not installed, I will install it.
 
 
 ```r
 # load libraries
+
+if("dplyr" %in% rownames(installed.packages()) == FALSE) {install.packages("dplyr")}
+if("ggplot2" %in% rownames(installed.packages()) == FALSE) {install.packages("ggplot2")}
+if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")}
+if("scales" %in% rownames(installed.packages()) == FALSE) {install.packages("scales")}
 
 library(dplyr)
 ```
@@ -106,6 +110,10 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 ## Data Processing
 
+### Loading Data
+
+Data comes from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. More information on the data can be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf).  I will check to see if the data exists first.  If not, I will download and read into the dataframe d1, then drop any columns not related to the analysis.
+
 
 
 ```r
@@ -138,22 +146,19 @@ names(d2)
 ## [6] "PROPDMG"    "PROPDMGEXP" "CROPDMG"    "CROPDMGEXP"
 ```
 
+### Formatting Data 1
+
+Next, I will check to see if there are any missing values.  After that, I'll convert the date column to a year and re-name the columns so they make more sense.
+
+
 ```r
 # check for missing data
 
-length(complete.cases(d2))
+length(complete.cases(d2))-nrow(d2)
 ```
 
 ```
-## [1] 902297
-```
-
-```r
-nrow(d2)
-```
-
-```
-## [1] 902297
+## [1] 0
 ```
 
 ```r
@@ -202,6 +207,11 @@ head(d2)
 ## 5 1951    AL TORNADO      0        2            2.5    K          0     
 ## 6 1951    AL TORNADO      0        6            2.5    K          0
 ```
+
+### Formatting Data 2
+
+Data for property and crop data include a number and an exponential multiplier.  The code below will examine the different multipliers in the data, and calculate the correct damage estimate for each row.
+
 
 ```r
 # Look at levels of propergy damage multiplier
@@ -275,7 +285,15 @@ d2 <- d2 %>%
 d2<- d2 %>%
   mutate(PropertyDamage = ifelse(PExp == -1, 0, PropertyDamage*10^PExp)) %>%
   mutate(CropDamage = ifelse(CExp == -1, 0, CropDamage*10^CExp))
+```
 
+### Formatting Data 3
+
+Now I will prepare to data frames for plotting.  One will have the top 15 weather events in terms of Total Health effects, the other will have the top 15 weather events in terms of Total Damage.  I will check to confirm that the top 15 events in each category represent over 90% of the total impact described in the data set.  There are 985 different weather events described in the data.  I want to ensure we're looking at the majority of damage and health effects.
+
+
+
+```r
 # Group by Events and total damage and health statistics
 
 d3<-d2 %>%
@@ -369,7 +387,9 @@ head(p2)
 
 ## Results
 
+### Figure 1 - Top Sources of Financial and Public Health Impact
 
+The plots show that tornadoes pose the biggest threat to public health and that floods cause the most damage.
 
 
 ```r
@@ -381,17 +401,20 @@ plot1<-ggplot(aes(x=Event, y=percent),data=p1)+geom_bar(fill="blue", stat="ident
   scale_x_discrete(limits=p1$Event)
 
 plot2<-ggplot(aes(x=Event, y=percent),data=p2)+geom_bar(fill="blue", stat="identity")+
-  labs(x="Event", y="Total Damage in Dollars", title="Top 15 Events - Damage")+
+  labs(x="Event", y="% of Total Damage", title="Top 15 Events - Damage")+
   theme(legend.position = "none", axis.text.x = element_text(angle = 60,hjust = 1))+
   scale_x_discrete(limits=p2$Event)
 
 multiplot(plot1, plot2, cols=2)
 ```
 
-![](WeatherEvents_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](WeatherEvents_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 
-Finally, we'll look at how these weather effects have trended over time
+
+### Figure 2 - Health and Financial Impacts over Time
+
+Finally, we'll look at how these weather effects have trended over time.  The documentation with the data says that the data are thin in the early years, but these plots show that the public health impacts and total damage from weather events have been increasing over the last 30 years.
 
 
 ```r
@@ -428,5 +451,5 @@ multiplot(plot3, plot4, cols=2)
 ## `geom_smooth()` using method = 'loess'
 ```
 
-![](WeatherEvents_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](WeatherEvents_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
